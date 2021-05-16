@@ -1,4 +1,6 @@
-from sage.all import matrix, vector, QQ, show, InteractiveLPProblem
+from sage.all import matrix, vector, RR, QQ, show, InteractiveLPProblem
+import sys
+import bisect
 
 gameResults = {}
 
@@ -20,15 +22,17 @@ def popAndPass(inputList, toPop):
 
 def addAndPass(inputList, toAdd):
     result = inputList.copy()
-    result.append(toAdd)
+    bisect.insort(result, toAdd)
     return result
 
 def getGameResults(rewards, cards1, cards2):
     if len(rewards) == 1: return rewards[0] * signum(cards1[0], cards2[0])
+    elif cards1 == cards2:
+        return 0
     elif listToString([rewards, cards1, cards2]) in gameResults:
         return gameResults[listToString([rewards, cards1, cards2])]
     elif listToString([rewards, cards2, cards1]) in gameResults:
-        return gameResults[listToString([rewards, cards1, cards2])] * (-1)
+        return gameResults[listToString([rewards, cards2, cards1])] * (-1)
     else:
         print("!ERROR! Did not find ", rewards, " ", cards1, " ", cards2, " state in result dictionary!")
         exit("0")
@@ -94,14 +98,22 @@ def showMatrix(rewards, cards1, cards2):
     for r in range(len(rewards)):
         payoffMatrix = createPayoffMatrix(rewards, r, cards1, cards2)
         result.append(solveNash(payoffMatrix)[1][:-2])
-    print(result)
-    return result
+
+    decimal_result = []
+    for r in range(len(result)):
+        decimal_result.append([])
+        for c in range(len(result[r])):
+            decimal_result[-1].append("%.2f" % RR(result[r][c]))
+            
+    print(decimal_result)
+    return decimal_result
 
 def solveGamesRecursively(maxSize):
     currSize = [] # [[rewards, cards1, cards2], [...], ...]
     nextSize = [[[], [], []]] # [[rewards, cards1, cards2], [...], ...]
 
     for size in range(maxSize):
+        print(len(nextSize))
         currSize = nextSize
         nextSize = []
 
@@ -117,13 +129,17 @@ def solveGamesRecursively(maxSize):
                                         temp = [addAndPass(game[0], i),
                                                 addAndPass(game[1] , j),
                                                 addAndPass(game[2],  k)]
-                                        if temp not in nextSize: nextSize.append(temp)
+                                        if temp not in nextSize \
+                                           and [temp[0], temp[2], temp[1]] not in nextSize \
+                                           and temp[1] != temp[2]:
+                                            nextSize.append(temp)
 
             if size >= 2:
                 solveGame(game[0], game[1], game[2])
 
-    final = nextSize[0]
+    final = [[i+1 for i in range(maxSize)], [i+1 for i in range(maxSize)], [i+1 for i in range(maxSize)]]
     showMatrix(final[0], final[1], final[2])
 
-
-solveGamesRecursively(5)
+maxSize = 3
+if len(sys.argv) > 1: maxSize = int(sys.argv[1])
+solveGamesRecursively(maxSize)
