@@ -103,7 +103,7 @@ def showMatrix(rewards, cards1, cards2):
     for r in range(len(result)):
         decimal_result.append([])
         for c in range(len(result[r])):
-            decimal_result[-1].append("%.2f" % RR(result[r][c]))
+            decimal_result[-1].append("%.4f" % RR(result[r][c]))
             
     print(decimal_result)
     return decimal_result
