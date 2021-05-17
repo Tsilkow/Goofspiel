@@ -2,7 +2,7 @@ from sage.all import matrix, vector, RR, QQ, show, InteractiveLPProblem
 import sys
 import bisect
 
-gameResults = {}
+gameResults = []
 
 # Pomocnicza funkcja do określenia znaku liczby
 def signum(a, b):
@@ -11,7 +11,7 @@ def signum(a, b):
     else:       return 0
 
 # Funkcja kodująca listę do haszowalnego stringa (to do: sprytniejsze kodowanie do inta?)
-def listToString(inputList):
+def listToIndex(inputList):
     result = ''
     for i in inputList:
         result = result.join(str(i))
@@ -34,10 +34,10 @@ def getGameResults(rewards, cards1, cards2):
     if len(rewards) == 1: return rewards[0] * signum(cards1[0], cards2[0])
     elif cards1 == cards2:
         return 0
-    elif listToString([rewards, cards1, cards2]) in gameResults:
-        return gameResults[listToString([rewards, cards1, cards2])]
-    elif listToString([rewards, cards2, cards1]) in gameResults:
-        return gameResults[listToString([rewards, cards2, cards1])] * (-1)
+    elif listToIndex([rewards, cards1, cards2]) in gameResults[len(rewards)]:
+        return gameResults[len(rewards)][listToIndex([rewards, cards1, cards2])]
+    elif listToIndex([rewards, cards2, cards1]) in gameResults[len(rewards)]:
+        return gameResults[len(rewards)][listToIndex([rewards, cards2, cards1])] * (-1)
     else:
         exit("!ERROR! Did not find ", rewards, " ", cards1, " ", cards2, " state in result dictionary!")
 
@@ -74,35 +74,18 @@ def solveNash(payoffMatrix):
     
     P = InteractiveLPProblem(A, b, c, variable_type=vt, constraint_type=ct)
     P = P.standard_form()
-    #show(P)
     P.run_simplex_method()
     return [P.objective_value(P.optimal_solution()), P.optimal_solution()[:-2]]
 
 # Funkcja rozwiązująca konkretną konfigurację gry - pod warunkiem że konfiguracje mniejszych długości są rozwiązane
 def solveGame(rewards, cards1, cards2):
-    if listToString([rewards, cards1, cards2]) not in gameResults:
+    if listToIndex([rewards, cards1, cards2]) not in gameResults[len(rewards)]:
         if len(rewards) > 1:
             result = []
             for r in range(len(rewards)):
                 payoffMatrix = createPayoffMatrix(rewards, r, cards1, cards2)
                 result.append(solveNash(payoffMatrix)[0])
-                gameResults[listToString([rewards, cards1, cards2])] = 1/len(rewards) * sum(result)
-
-# Funkcja tworząca finalną matrycę
-def showMatrix(rewards, cards1, cards2):
-    result = []
-    for r in range(len(rewards)):
-        payoffMatrix = createPayoffMatrix(rewards, r, cards1, cards2)
-        result.append(solveNash(payoffMatrix)[1])
-
-    decimal_result = []
-    for r in range(len(result)):
-        decimal_result.append([])
-        for c in range(len(result[r])):
-            decimal_result[-1].append("%.4f" % RR(result[r][c]))
-            
-    print(decimal_result)
-    return decimal_result
+                gameResults[len(rewards)][listToIndex([rewards, cards1, cards2])] = 1/len(rewards) * sum(result)
 
 # Funkcja wywołująca rozwiązywanie pojedyńczych konfiguracji w odpowiedniej kolejności
 def solveGamesRecursively(maxSize):
@@ -111,11 +94,13 @@ def solveGamesRecursively(maxSize):
 
     for size in range(maxSize):
         print(len(nextSize))
+        gameResults.append({}) # dodawanie tablicy ze słownikiem gier talii długości size
+        if len(gameResults) >= 3: gameResults[-3] = {} # usuwanie zbędnego słownika
         currSize = nextSize
         nextSize = []
 
         for game in currSize:
-            if listToString(game) not in gameResults:
+            if listToIndex(game) not in gameResults[len(game[0])]:
                 print(game)
                 for i in range(1, maxSize+1):
                     if i not in game[0]:
@@ -136,6 +121,22 @@ def solveGamesRecursively(maxSize):
 
     final = [i+1 for i in range(maxSize)]
     showMatrix(final, final, final)
+
+# Funkcja tworząca finalną matrycę
+def showMatrix(rewards, cards1, cards2):
+    result = []
+    for r in range(len(rewards)):
+        payoffMatrix = createPayoffMatrix(rewards, r, cards1, cards2)
+        result.append(solveNash(payoffMatrix)[1])
+
+    decimal_result = []
+    for r in range(len(result)):
+        decimal_result.append([])
+        for c in range(len(result[r])):
+            decimal_result[-1].append("%.4f" % RR(result[r][c]))
+            
+    print(decimal_result)
+    return decimal_result
 
 maxSize = 3
 if len(sys.argv) > 1: maxSize = int(sys.argv[1])
