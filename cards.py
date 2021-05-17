@@ -39,7 +39,7 @@ def getGameResults(rewards, cards1, cards2):
     elif listToString([rewards, cards2, cards1]) in gameResults:
         return gameResults[listToString([rewards, cards2, cards1])] * (-1)
     else:
-        return False
+        exit("!ERROR! Did not find ", rewards, " ", cards1, " ", cards2, " state in result dictionary!")
 
 # Funkcja tworząca matrycę wypłat dla danej konfiguracji i wybranej nagrody
 def createPayoffMatrix(rewards, rewardIndex, cards1, cards2):
@@ -126,7 +126,10 @@ def solveGamesRecursively(maxSize):
                                         temp = [addAndPass(game[0], i),
                                                 addAndPass(game[1], j),
                                                 addAndPass(game[2], k)]
-                                        if !getGameResults(temp): nextSize.append(temp)
+                                        if temp not in nextSize \
+                                           and [temp[0], temp[1], temp[2]] not in nextSize \
+                                           and temp[1] != temp[2]:
+                                            nextSize.append(temp)
 
             if size >= 2:
                 solveGame(game[0], game[1], game[2])
