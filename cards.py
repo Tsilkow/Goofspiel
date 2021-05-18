@@ -1,4 +1,4 @@
-from sage.all import matrix, vector, RR, QQ, show, InteractiveLPProblem
+from sage.all import matrix, vector, RR, QQ, show, InteractiveLPProblem, MixedIntegerLinearProgram
 import sys
 import bisect
 
@@ -75,7 +75,28 @@ def solveNash(payoffMatrix):
     P = InteractiveLPProblem(A, b, c, variable_type=vt, constraint_type=ct)
     P = P.standard_form()
     P.run_simplex_method()
+    
     return [P.objective_value(P.optimal_solution()), P.optimal_solution()[:-2]]
+
+#def newSolveNash(payoffMatrix):
+#    solution = []
+#    lp = MixedIntegerLinearProgram(maximization=True)
+#
+#    x = lp.new_variable()
+#
+#    lp.set_objective(x[len(payoffMatrix)])
+#
+#    for r in range(len(payoffMatrix)):
+#        lp.add_constraint(sum(x[i] * payoffMatrix[i][r] for i in range(len(payoffMatrix))) -
+#                          x[len(payoffMatrix)] >= 0)
+#    lp.add_constraint(sum(x[i] for i in range(len(payoffMatrix))) == 1)
+#
+#    lp.solve()
+#    
+#    for i in range(len(payoffMatrix)):
+#        solution.append(lp.get_values(x)[i])
+#
+#    return [lp.solve(), solution]
 
 # Funkcja rozwiązująca konkretną konfigurację gry - pod warunkiem że konfiguracje mniejszych długości są rozwiązane
 def solveGame(rewards, cards1, cards2):
@@ -93,7 +114,7 @@ def solveGamesRecursively(maxSize):
     nextSize = [[[], [], []]] # [[rewards, cards1, cards2], [...], ...]
 
     for size in range(maxSize):
-        print(len(nextSize))
+        #print(len(nextSize))
         gameResults.append({}) # dodawanie tablicy ze słownikiem gier talii długości size
         if len(gameResults) >= 3: gameResults[-3] = {} # usuwanie zbędnego słownika
         currSize = nextSize
@@ -101,7 +122,7 @@ def solveGamesRecursively(maxSize):
 
         for game in currSize:
             if listToIndex(game) not in gameResults[len(game[0])]:
-                print(game)
+                #print(game)
                 for i in range(1, maxSize+1):
                     if i not in game[0]:
                         for j in range(1, maxSize+1):
@@ -133,9 +154,10 @@ def showMatrix(rewards, cards1, cards2):
     for r in range(len(result)):
         decimal_result.append([])
         for c in range(len(result[r])):
-            decimal_result[-1].append("%.4f" % RR(result[r][c]))
-            
-    print(decimal_result)
+            decimal_result[-1].append("%.4f" % RR(result[c][r]))
+
+    for c in decimal_result:
+        print(c)
     return decimal_result
 
 maxSize = 3
